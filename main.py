@@ -59,8 +59,8 @@ class MyStack(TerraformStack):
             self, "launch_template",
             image_id="ami-084568db4383264d4",
             instance_type="t2.micro",
-            vpc_security_group_ids= [sg_ec2.id],
-            kernel_id="data-skills-hub-key",
+            vpc_security_group_ids=[sg_ec2.id],
+            key_name="data-skills-hub-key",
             user_data=self.get_user_data(efs.id),
             tags={"Name": "TP-EC2-EFS"},
             iam_instance_profile={"arn": f"arn:aws:iam::{account_id}:instance-profile/RoleEC2"},
@@ -109,11 +109,12 @@ class MyStack(TerraformStack):
         )
         
         
-        # Terraform output for the EFS file system ID
-        TerraformOutput(self, "efs_id",
-            value="",
-            description="The ID of the EFS file system",
+        # Adress du load balancer
+        TerraformOutput(
+            self, "lb_address",
+            value=lb.dns_name
         )
+        
 
     def infra_base(self):
         """
