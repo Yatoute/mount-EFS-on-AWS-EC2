@@ -204,7 +204,7 @@ mkdir -p /mnt/efs
 mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
 # Ajouter le montage au fichier /etc/fstab pour le rendre persistant apres reboot
 echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
-# Vérification que le montage a réussi
+# Verification que le montage a reussi
 if mountpoint -q /mnt/efs; then
     echo "[OK] EFS monte avec succes sur /mnt/efs" >> /var/log/efs-check.log
 else
