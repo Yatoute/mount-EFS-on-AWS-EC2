@@ -1,0 +1,18 @@
+{
+  "language": "python",
+  "app": "poetry run python main.py",
+  "projectId": "3e1646bf-f86a-4bf6-9ec0-cae461a8e25b",
+  "sendCrashReports": "true",
+  "terraformProviders": [
+  {
+    "name": "aws",
+    "source": "hashicorp/aws",
+    "version": "5.25.0"
+  }
+],
+  "terraformModules": [],
+  "codeMakerOutput": "imports",
+  "context": {
+
+  }
+}
