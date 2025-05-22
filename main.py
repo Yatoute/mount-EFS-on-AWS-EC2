@@ -45,7 +45,7 @@ class MyStack(TerraformStack):
             efs_mount_target= EfsMountTarget(
                 self, f"target_{i}",
                 file_system_id= Token.as_string(efs.id),
-                subnet_id= subnet.id,
+                subnet_id= subnet,
                 security_groups=[sg_efs.id]
             )
             efs_mount_targets.append(efs_mount_target)
