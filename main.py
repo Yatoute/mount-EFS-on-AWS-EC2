@@ -139,7 +139,7 @@ class MyStack(TerraformStack):
                 DefaultSubnet(
                     self, f"subnet_{i}",
                     availability_zone=az_id
-                )
+                ).id
             )
         # Security group pour EC2
         sg_ec2 = SecurityGroup(
