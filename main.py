@@ -22,7 +22,7 @@ import base64
 
 load_dotenv()
 
-git_repo=""
+git_repo="https://github.com/Yatoute/mount-EFS-on-AWS-EC2.git"
 bucket_s3= os.getenv("BUCKET")
 
 class MyStack(TerraformStack):                                         
@@ -38,9 +38,6 @@ class MyStack(TerraformStack):
         efs= EfsFileSystem(
             self, "efs",
             performance_mode="generalPurpose",
-            lifecycle_policy={
-                "transition_to_ia": "AFTER_7_DAYS"
-            },
             tags={"Name": "shared-processing-efs"}
         )
         efs_mount_targets = []
