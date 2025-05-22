@@ -193,36 +193,34 @@ class MyStack(TerraformStack):
         """GET USER DATA FOR EC2"""
         
         return base64.b64encode(f"""#!/bin/bash
-        apt update -y
-        apt upgrade -y
-        apt install -y nfs-common
-        apt install -y python3-pip python3.12-venv
-        
-        # Création du point de montage
-        mkdir -p /mnt/efs
+echo "userdata-start"
+apt update -y
+apt upgrade -y
+apt install -y nfs-common
+apt install -y python3-pip python3.12-venv
+# Creation du point de montage
+mkdir -p /mnt/efs
+# Monter le systeme de fichiers EFS
+mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
+# Ajouter le montage au fichier /etc/fstab pour le rendre persistant apres reboot
+echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
+# Vérification que le montage a réussi
+if mountpoint -q /mnt/efs; then
+    echo "[OK] EFS monte avec succes sur /mnt/efs" >> /var/log/efs-check.log
+else
+    echo "[ERREUR] Le montage EFS a echoue" >> /var/log/efs-check.log
+fi
 
-        # Monter le système de fichiers EFS
-        mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
-
-        # Ajouter le montage au fichier /etc/fstab pour le rendre persistant après reboot
-        echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
-
-        # Vérification que le montage a réussi
-        if mountpoint -q /mnt/efs; then
-            echo "[OK] EFS monté avec succès sur /mnt/efs" >> /var/log/efs-check.log
-        else
-            echo "[ERREUR] Le montage EFS a échoué" >> /var/log/efs-check.log
-        fi
-        
-        # Cloner le webservice
-        git clone {git_repo} EFS-on-EC2
-        cd EFS-on-EC2/webservice
-        python3 -m venv venv
-        source venv/bin/activate
-        echo 'BUCKET={bucket_s3}' >> .env
-        pip3 install -r requirements.txt
-        venv/bin/python app.py
-        """.encode("ascii")).decode("ascii")
+# Cloner le webservice
+git clone {git_repo} EFS-on-EC2
+cd EFS-on-EC2/webservice
+python3 -m venv venv
+source venv/bin/activate
+echo 'BUCKET={bucket_s3}' >> .env
+pip3 install -r requirements.txt
+venv/bin/python app.py
+echo "userdata-end"
+""".encode("ascii")).decode("ascii")
 
         
 app = App()
