@@ -211,7 +211,7 @@ if mountpoint -q /mnt/efs; then
 else
     echo "[ERREUR] Le montage EFS a echoue" >> /var/log/efs-check.log
 fi
-
+mkdir -p /mnt/efs/uploads /mnt/efs/results
 # Cloner le webservice
 git clone {git_repo} EFS-on-EC2
 cd EFS-on-EC2/webservice
