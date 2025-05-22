@@ -202,10 +202,10 @@ class MyStack(TerraformStack):
         mkdir -p /mnt/efs
 
         # Monter le système de fichiers EFS
-        mount -t nfs4 -o nfsvers=4.1 {Token.as_string(efs_id)}.efs.us-east-1.amazonaws.com:/ /mnt/efs
+        mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
 
         # Ajouter le montage au fichier /etc/fstab pour le rendre persistant après reboot
-        echo '{Token.as_string(efs_id)}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
+        echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
 
         # Vérification que le montage a réussi
         if mountpoint -q /mnt/efs; then
