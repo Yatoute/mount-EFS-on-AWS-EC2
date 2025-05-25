@@ -67,23 +67,50 @@ jobs:
           aws ec2 modify-launch-template \
             --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
             --default-version $VERSION
-
       - name: Refresh ASG to use new version
+        id: refresh_asg
         run: |
-          aws autoscaling start-instance-refresh \
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
-            --strategy Rolling
+            --strategy Rolling \
+            --query "InstanceRefreshId" \
+            --output text)
+
+          echo "Started ASG instance refresh with ID: $REFRESH_ID"
+          echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
+
+      - name: Wait for ASG refresh to complete
+        run: |
+          echo "Waiting for ASG instance refresh to complete..."
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
+              --query "InstanceRefreshes[?InstanceRefreshId=='${{ env.REFRESH_ID }}'].Status" \
+              --output text)
+
+            echo "Current refresh status: $STATUS"
+            if [[ "$STATUS" == "Successful" || "$STATUS" == "Cancelled" || "$STATUS" == "Failed" ]]; then
+              break
+            fi
+            sleep 30
+          done
 
       - name: Delete old AMI if exists
         if: env.PREVIOUS_AMI_ID != ''
         run: |
-          echo "Deleting old AMI ${{ secrets.PREVIOUS_AMI_ID }} and associated snapshots..."
-          SNAPSHOT_IDS=$(aws ec2 describe-images --image-ids ${{ secrets.PREVIOUS_AMI_ID }} --query "Images[0].BlockDeviceMappings[].Ebs.SnapshotId" --output text)
+          echo "Deregistering old AMI ${{ secrets.PREVIOUS_AMI_ID }}"
+          aws ec2 deregister-image --image-id ${{ secrets.PREVIOUS_AMI_ID }}
+
+          echo "Waiting before deleting snapshots..."
+          sleep 30
+
+          SNAPSHOT_IDS=$(aws ec2 describe-images --image-ids ${{ secrets.PREVIOUS_AMI_ID }} \
+            --query "Images[0].BlockDeviceMappings[].Ebs.SnapshotId" --output text)
+
           for snapshot in $SNAPSHOT_IDS; do
             echo "Deleting snapshot $snapshot"
-            aws ec2 delete-snapshot --snapshot-id $snapshot
+            aws ec2 delete-snapshot --snapshot-id $snapshot || echo "Snapshot $snapshot still in use, skipping"
           done
-          aws ec2 deregister-image --image-id ${{ secrets.PREVIOUS_AMI_ID }}
 
       - name: Update GitHub secret with new AMI ID
         run: |
