@@ -45,7 +45,7 @@ jobs:
             -var "ssh_username=ubuntu" \
             -var "git_repo=${{ secrets.GIT_REPO }}" \
             -var "bucket=${{ secrets.BUCKET }}" \
-            ../../packer_ami.json | tee /dev/stderr | awk -F, '/artifact,0,id/ {print $6}' | cut -d: -f2)
+            ./packer_ami.json | tee /dev/stderr | awk -F, '/artifact,0,id/ {print $6}' | cut -d: -f2)
 
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
           echo "AMI_ID=$AMI_ID"
