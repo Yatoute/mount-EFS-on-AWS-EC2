@@ -63,7 +63,7 @@ def save_file_on_s3(req: ArticleModel):
         path_out = os.path.join(EFS_RESULTS, filename)
 
         s3.upload_file(path_out, bucket_s3, f"processed-articles/{filename}")
-        # os.remove(path_out)
+        os.remove(path_out)
         # os.remove(path_in)
         
         return {"message": f"{filename} sauvegardé dans S3"}
