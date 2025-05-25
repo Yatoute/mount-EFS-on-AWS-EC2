@@ -83,9 +83,8 @@ jobs:
           aws ec2 deregister-image --image-id ${{ secrets.PREVIOUS_AMI_ID }}
 
       - name: Update GitHub secret with new AMI ID
-        uses: peter-evans/create-or-update-secret@v2.0.0
+        run: |
+          echo "${{ env.AMI_ID }}" | gh secret set PREVIOUS_AMI_ID --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
-        with:
-          token: ${{ secrets.GH_PAT }}
-          secret-name: PREVIOUS_AMI_ID
-          secret-value: ${{ env.AMI_ID }}
