@@ -116,5 +116,5 @@ jobs:
         run: |
           echo "${{ env.AMI_ID }}" | gh secret set PREVIOUS_AMI_ID --repo ${{ github.repository }}
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_ACCESS_KEY }}
 
