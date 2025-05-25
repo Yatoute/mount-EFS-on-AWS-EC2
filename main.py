@@ -23,8 +23,7 @@ import base64
 load_dotenv()
 
 git_repo=os.getenv("GIT_REPO")
-bucket_s3= os.getenv("BUCKET")
-ami_id= "ami-06a10baaa211d9f51"
+ami_id= "ami-0aef8c500fedbcf68"
 
 class MyStack(TerraformStack):                                         
     def __init__(self, scope: Construct, id: str):
@@ -209,7 +208,7 @@ echo "userdata-start"
 # Creation du point de montage
 mkdir -p /mnt/efs
 # Monter le systeme de fichiers EFS
-mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
+mount -t nfs4 -o nfsvers=4.1 "{efs_id}.efs.us-east-1.amazonaws.com:/" /mnt/efs
 # Ajouter le montage au fichier /etc/fstab pour le rendre persistant apres reboot
 echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
 # Verifier que le montage a reussi

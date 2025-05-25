@@ -52,7 +52,7 @@
         "[Service]",
         "User=ubuntu",
         "WorkingDirectory=/home/ubuntu/EFS-on-EC2/webservice",
-        "ExecStart=/home/ubuntu/EFS-on-EC2/webservice/venv/bin/python main.py",
+        "ExecStart=/home/ubuntu/EFS-on-EC2/webservice/venv/bin/python app.py",
         "Restart=always",
         "Environment=BUCKET={{user `bucket`}}",
         "",
