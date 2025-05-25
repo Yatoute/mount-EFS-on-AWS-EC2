@@ -34,9 +34,9 @@ jobs:
         uses: hashicorp/setup-packer@v3
         with:
           version: latest
-          
-      - name: Initialize Packer plugins
-        run: packer init ./packer_ami.json
+
+      - name: Install amazon-ebs plugin
+        run: packer plugins install github.com/hashicorp/amazon
 
       - name: Build AMI with Packer
         id: build_ami
