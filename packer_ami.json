@@ -15,7 +15,7 @@
       "source_ami": "{{user `source_ami`}}",
       "ssh_username": "{{user `ssh_username`}}",
       "ami_name": "efs-webservice-ami-{{timestamp}}",
-      "ami_description": "Custom AMI with EFS mount and Python webservice",
+      "ami_description": "Custom AMI for Python webservice",
       "tags": {
         "Name": "efs-webservice-ami"
       }
@@ -38,6 +38,30 @@
         "echo 'BUCKET={{user `bucket`}}' >> .env",
         "pip3 install -r requirements.txt",
         "deactivate"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "echo 'Creating systemd service...'",
+        "cat <<EOF | sudo tee /etc/systemd/system/webservice.service",
+        "[Unit]",
+        "Description=Start Python Webservice",
+        "After=network.target",
+        "",
+        "[Service]",
+        "User=ubuntu",
+        "WorkingDirectory=/home/ubuntu/EFS-on-EC2/webservice",
+        "ExecStart=/home/ubuntu/EFS-on-EC2/webservice/venv/bin/python main.py",
+        "Restart=always",
+        "Environment=BUCKET={{user `bucket`}}",
+        "",
+        "[Install]",
+        "WantedBy=multi-user.target",
+        "EOF",
+        "sudo chmod 644 /etc/systemd/system/webservice.service",
+        "sudo systemctl daemon-reload",
+        "sudo systemctl enable webservice"
       ]
     }
   ]

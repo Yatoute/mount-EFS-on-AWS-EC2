@@ -24,7 +24,8 @@ load_dotenv()
 
 git_repo=os.getenv("GIT_REPO")
 bucket_s3= os.getenv("BUCKET")
-ami_id= os.getenv("PREVIOUS_AMI_ID")
+ami_id= "ami-06a10baaa211d9f51"
+
 class MyStack(TerraformStack):                                         
     def __init__(self, scope: Construct, id: str):
         super().__init__(scope, id)
@@ -211,7 +212,7 @@ mkdir -p /mnt/efs
 mount -t nfs4 -o nfsvers=4.1 {efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs
 # Ajouter le montage au fichier /etc/fstab pour le rendre persistant apres reboot
 echo '{efs_id}.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0' >> /etc/fstab
-# Verification que le montage a reussi
+# Verifier que le montage a reussi
 if mountpoint -q /mnt/efs; then
     echo "[OK] EFS monte avec succes sur /mnt/efs" >> /var/log/efs-check.log
 else
@@ -221,11 +222,11 @@ fi
 [ ! -d /mnt/efs/uploads ] && mkdir -p /mnt/efs/uploads
 [ ! -d /mnt/efs/results ] && mkdir -p /mnt/efs/results
 
-# Lancer le webservice
-cd /home/ubuntu/EFS-on-EC2/webservice
-source venv/bin/activate
-echo 'BUCKET={bucket_s3}' >> .env
-venv/bin/python app.py
+# Activer et demarrer le service
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable webservice
+systemctl start webservice
 echo "userdata-end"
 """.encode("ascii")).decode("ascii")
 
