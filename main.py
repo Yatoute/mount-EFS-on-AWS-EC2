@@ -23,7 +23,7 @@ import base64
 load_dotenv()
 
 git_repo=os.getenv("GIT_REPO")
-ami_id= "ami-0aef8c500fedbcf68"
+ami_id= "ami-0c34cd1ee08bce942"
 
 class MyStack(TerraformStack):                                         
     def __init__(self, scope: Construct, id: str):
@@ -220,6 +220,9 @@ fi
 
 [ ! -d /mnt/efs/uploads ] && mkdir -p /mnt/efs/uploads
 [ ! -d /mnt/efs/results ] && mkdir -p /mnt/efs/results
+
+# Donner les droits a utilisateur ubuntu (qui execute le service)
+chown -R ubuntu:ubuntu /mnt/efs/uploads /mnt/efs/results
 
 # Activer et demarrer le service
 systemctl daemon-reexec
