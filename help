@@ -40,3 +40,4 @@ Use Providers:
   You can also build any module or provider locally. Learn more: https://cdk.tf/modules-and-providers
 
 ========================================================================================================
+packer plugins install github.com/hashicorp/amazon

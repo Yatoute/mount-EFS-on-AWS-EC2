@@ -1,0 +1,44 @@
+{
+  "variables": {
+    "region": "us-east-1",
+    "source_ami": "ami-084568db4383264d4",
+    "instance_type": "t2.micro",
+    "ssh_username": "ubuntu",
+    "git_repo": "",
+    "bucket": ""
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "{{user `region`}}",
+      "instance_type": "{{user `instance_type`}}",
+      "source_ami": "{{user `source_ami`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ami_name": "efs-webservice-ami-{{timestamp}}",
+      "ami_description": "Custom AMI with EFS mount and Python webservice",
+      "tags": {
+        "Name": "efs-webservice-ami"
+      }
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "echo 'Deblocking dpkg...'",
+        "sudo dpkg --configure -a",
+        "sudo apt update -y",
+        "sudo apt upgrade -y",
+        "sudo apt install -y nfs-common python3-pip python3.12-venv git",
+        "echo 'Cloning the repo and setting up the webservice...'",
+        "git clone {{user `git_repo`}} EFS-on-EC2",
+        "cd EFS-on-EC2/webservice",
+        "python3 -m venv venv",
+        ". venv/bin/activate",
+        "echo 'BUCKET={{user `bucket`}}' >> .env",
+        "pip3 install -r requirements.txt",
+        "deactivate"
+      ]
+    }
+  ]
+}

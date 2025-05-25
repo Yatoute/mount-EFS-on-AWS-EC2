@@ -22,9 +22,9 @@ import base64
 
 load_dotenv()
 
-git_repo="https://github.com/Yatoute/mount-EFS-on-AWS-EC2.git"
+git_repo=os.getenv("GIT_REPO")
 bucket_s3= os.getenv("BUCKET")
-
+ami_id= os.getenv("PREVIOUS_AMI_ID")
 class MyStack(TerraformStack):                                         
     def __init__(self, scope: Construct, id: str):
         super().__init__(scope, id)
@@ -57,7 +57,7 @@ class MyStack(TerraformStack):
         # Templace d'instance EC2
         launch_template = LaunchTemplate(
             self, "launch_template",
-            image_id="ami-084568db4383264d4",
+            image_id=ami_id,
             instance_type="t2.micro",
             vpc_security_group_ids=[sg_ec2.id],
             key_name="data-skills-hub-key",
@@ -113,6 +113,16 @@ class MyStack(TerraformStack):
         TerraformOutput(
             self, "lb_address",
             value=lb.dns_name
+        )
+        # ID du launch template
+        TerraformOutput(
+            self, "launch_template_id",
+            value=launch_template.id
+        )
+        # Nom de l'ASG
+        TerraformOutput(
+            self, "asg_name",
+            value=asg.name
         )
         
 
@@ -195,10 +205,6 @@ class MyStack(TerraformStack):
         
         return base64.b64encode(f"""#!/bin/bash
 echo "userdata-start"
-apt update -y
-apt upgrade -y
-apt install -y nfs-common
-apt install -y python3-pip python3.12-venv
 # Creation du point de montage
 mkdir -p /mnt/efs
 # Monter le systeme de fichiers EFS
@@ -211,14 +217,14 @@ if mountpoint -q /mnt/efs; then
 else
     echo "[ERREUR] Le montage EFS a echoue" >> /var/log/efs-check.log
 fi
-mkdir -p /mnt/efs/uploads /mnt/efs/results
-# Cloner le webservice
-git clone {git_repo} EFS-on-EC2
-cd EFS-on-EC2/webservice
-python3 -m venv venv
+
+[ ! -d /mnt/efs/uploads ] && mkdir -p /mnt/efs/uploads
+[ ! -d /mnt/efs/results ] && mkdir -p /mnt/efs/results
+
+# Lancer le webservice
+cd /home/ubuntu/EFS-on-EC2/webservice
 source venv/bin/activate
 echo 'BUCKET={bucket_s3}' >> .env
-pip3 install -r requirements.txt
 venv/bin/python app.py
 echo "userdata-end"
 """.encode("ascii")).decode("ascii")

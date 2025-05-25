@@ -1,0 +1,90 @@
+name: Build AMI and update secret
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-ami:
+    runs-on: ubuntu-latest
+
+    env:
+      GIT_REPO: ${{ secrets.GIT_REPO }}
+      BUCKET: ${{ secrets.BUCKET }}
+      PREVIOUS_AMI_ID: ${{ secrets.PREVIOUS_AMI_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          version: latest
+
+      - name: Build AMI with Packer
+        id: build_ami
+        run: |
+          # Lancer la construction de l'AMI
+          AMI_ID=$(packer build -machine-readable -var "region=${{ secrets.AWS_REGION }}" \
+            -var "source_ami=ami-084568db4383264d4" \
+            -var "instance_type=t2.micro" \
+            -var "ssh_username=ubuntu" \
+            -var "git_repo=${{ secrets.GIT_REPO }}" \
+            -var "bucket=${{ secrets.BUCKET }}" \
+            ../../packer_ami.json | tee /dev/stderr | awk -F, '/artifact,0,id/ {print $6}' | cut -d: -f2)
+
+          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+          echo "AMI_ID=$AMI_ID"
+
+      - name: Update Launch Template with new AMI
+        run: |
+          VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
+            --source-version 1 \
+            --launch-template-data "{\"ImageId\":\"$AMI_ID\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' \
+            --output text)
+
+          echo "New launch template version: $VERSION"
+
+          aws ec2 modify-launch-template \
+            --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
+            --default-version $VERSION
+
+      - name: Refresh ASG to use new version
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
+            --strategy Rolling
+
+      - name: Delete old AMI if exists
+        if: env.PREVIOUS_AMI_ID != ''
+        run: |
+          echo "Deleting old AMI ${{ secrets.PREVIOUS_AMI_ID }} and associated snapshots..."
+          SNAPSHOT_IDS=$(aws ec2 describe-images --image-ids ${{ secrets.PREVIOUS_AMI_ID }} --query "Images[0].BlockDeviceMappings[].Ebs.SnapshotId" --output text)
+          for snapshot in $SNAPSHOT_IDS; do
+            echo "Deleting snapshot $snapshot"
+            aws ec2 delete-snapshot --snapshot-id $snapshot
+          done
+          aws ec2 deregister-image --image-id ${{ secrets.PREVIOUS_AMI_ID }}
+
+      - name: Update GitHub secret with new AMI ID
+        uses: peter-evans/create-or-update-secret@v2
+        with:
+          token: ${{ secrets.GH_PAT }}
+          secret-name: PREVIOUS_AMI_ID
+          secret-value: ${{ env.AMI_ID }}
