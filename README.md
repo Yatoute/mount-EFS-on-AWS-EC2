@@ -42,30 +42,60 @@ This project provisions an AWS infrastructure using CDK for Terraform (CDKTF) to
     ```
 
 2. **Set environment variables**:
-    - Create a `.env` file with:
+    - Use the provided `.env.template` file as a base to create your own `.env` file:
+      ```sh
+      cp .env.template .env
+      # Then edit .env with your values
+      ```
+    - The `.env` file contains variables like:
       ```
       GIT_REPO=<your-repo-url>
       BUCKET=<your-s3-bucket-name>
       ```
 
 3. **Synthesize and deploy infrastructure**:
-    ```sh
-    poetry run python 
-    cdktf synth
-    cdktf deploy
-    ```
-
-4. **Build and update AMI**:
-    - Use the GitHub Actions workflow or run Packer manually:
+    - **Step 1: Deploy S3 resources (serverless)**
       ```sh
-      packer build packer_ami.json
+      poetry run python main_serverless.py
+      cdktf synth
+      cdktf deploy
+      ```
+    - **Step 2: Build the custom AMI for the web service**
+      ```sh
+      packer build \
+        -var "region=<your-region>" \
+        -var "source_ami=<base-ami-id>" \
+        -var "git_repo=<your-repo-url>" \
+        -var "bucket=<your-s3-bucket-name>" \
+        packer_ami.json
+      ```
+      > Retrieve the generated AMI ID for the next step.
+    - **Step 3: Deploy the server infrastructure (EC2/EFS/ALB)**
+      - Update the `ami_id` variable in `main.py` with the AMI ID from step 2, then deploy:
+      ```sh
+      poetry run python main.py
+      cdktf synth
+      cdktf deploy
       ```
 
-5. **Run the web service locally (for testing)**:
-    ```sh
-    cd webservice
-    poetry run uvicorn app:app --reload --port 8080
-    ```
+4. **Build and update AMI automatically (CI/CD)**:
+    - The GitHub Actions workflow (`.github/workflows/build-ami.yml`) automates AMI building, Launch Template update, ASG refresh, and old AMI cleanup.
+    - This workflow uses GitHub secrets for sensitive variables.
+
+## Environment Variables & Secrets
+
+- **.env setup:**  
+  Use the provided `.env.template` file as a base to create your own `.env` file.
+  ```sh
+  cp .env.template .env
+  # Edit .env with your values
+  ```
+- **Secrets automation:**  
+  You do **not** need to run `add-secrets.sh` manually.  
+  This script is automatically executed on every push via a pre-push Git hook, ensuring your `.env` variables are always synced to GitHub Secrets.
+- **Sensitive secrets** (AWS credentials, GH_TOKEN, etc.) should be set manually in your repository's GitHub Secrets.
+
+---
 
 ## API Endpoints
 
