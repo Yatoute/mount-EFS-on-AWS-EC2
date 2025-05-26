@@ -34,6 +34,19 @@ This project provisions an AWS infrastructure using CDK for Terraform (CDKTF) to
 - [Packer](https://www.packer.io/)
 - [GitHub CLI](https://cli.github.com/)
 
+### Environment Variables & Secrets
+
+- **.env setup:**  
+  Use the provided `.env.template` file as a base to create your own `.env` file.
+  ```sh
+  cp .env.template .env
+  # Edit .env with your values
+  ```
+- **Secrets automation:**  
+  You do **not** need to run `add-secrets.sh` manually.  
+  This script is automatically executed on every push via a pre-push Git hook, ensuring your `.env` variables are always synced to GitHub Secrets.
+- **Sensitive secrets** (AWS credentials, GH_TOKEN, etc.) should be set manually in your repository's GitHub Secrets.
+
 ### Setup
 
 1. **Install dependencies**:
@@ -81,20 +94,6 @@ This project provisions an AWS infrastructure using CDK for Terraform (CDKTF) to
 4. **Build and update AMI automatically (CI/CD)**:
     - The GitHub Actions workflow (`.github/workflows/build-ami.yml`) automates AMI building, Launch Template update, ASG refresh, and old AMI cleanup.
     - This workflow uses GitHub secrets for sensitive variables.
-
-## Environment Variables & Secrets
-
-- **.env setup:**  
-  Use the provided `.env.template` file as a base to create your own `.env` file.
-  ```sh
-  cp .env.template .env
-  # Edit .env with your values
-  ```
-- **Secrets automation:**  
-  You do **not** need to run `add-secrets.sh` manually.  
-  This script is automatically executed on every push via a pre-push Git hook, ensuring your `.env` variables are always synced to GitHub Secrets.
-- **Sensitive secrets** (AWS credentials, GH_TOKEN, etc.) should be set manually in your repository's GitHub Secrets.
-
 ---
 
 ## API Endpoints
